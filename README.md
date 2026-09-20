@@ -41,3 +41,8 @@ Dass die Kosten trotz höherer chemischer Energiedichte von Kraftstoffen oft zug
 | **Strom (EV)** | 1,0 kWh / kWh | ca. 80 % – 90 % *(inkl. Ladeverlusten)* |
 
 Da der Bordcomputer den tatsächlichen Energiebedarf bereits fahrfertig anzeigt, basiert die Berechnung des Rechners direkt auf dem realen Endverbrauch auf 100 km.
+
+### ⚠️ Notiz zu Ladeverlusten
+Um die reale Kostenbelastung nicht schönzurechnen, kalkuliert das Tool beim E-Auto automatisch mit einem **pauschalen Ladeverlust von 10 %**. 
+
+Bordcomputer im E-Auto zeigen oft nur den Verbrauch *aus der Batterie* an. Der Stromzähler an der Wallbox erfasst jedoch auch die Wandlungsverluste (AC zu DC) und die Energie, die das Batteriemanagement für das Temperieren des Akkus beim Ladevorgang benötigt. Stellst du im Rechner also einen Bordcomputer-Wert von `17.0 kWh/100km` ein, berechnet das Tool die Kosten fairerweise auf Basis von `18.7 kWh/100km`, da dies der Menge entspricht, die du tatsächlich bezahlst.
