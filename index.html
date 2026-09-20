@@ -9,7 +9,15 @@
             --bg: #121212; --surface: #1e1e1e; --text: #eee; --muted: #888;
             --ev: #4caf50; --diesel: #2196f3; --petrol: #ff9800;
         }
-        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; box-sizing: border-box; }
+        body { 
+            font-family: system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 15px; 
+            box-sizing: border-box; 
+            user-select: none; 
+        }
         
         /* 1. Bar Chart Top */
         .chart { margin-bottom: 25px; margin-top: 10px; }
@@ -23,9 +31,25 @@
         .stat-box { flex: 1; background: var(--surface); padding: 12px 4px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;}
         .stat-box span { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; line-height: 1.2; letter-spacing: 0.5px;}
         .stat-box strong { font-size: 17px; }
+
+        /* Energy Efficiency Badge */
+        .efficiency-card {
+            background: rgba(76, 175, 80, 0.08);
+            border: 1px solid rgba(76, 175, 80, 0.25);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 25px;
+            font-size: 12px;
+            color: #b2dfdb;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .efficiency-card strong {
+            color: #a5d6a7;
+        }
         
         /* 4. Sliders at the bottom */
-        .controls { margin-top: 30px; }
+        .controls { margin-top: 10px; }
         .control-group { background: var(--surface); padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; }
         .control-group label { display: block; font-size: 14px; color: var(--text); margin-bottom: 12px; font-weight: 500; }
         .slider-row { display: flex; align-items: center; gap: 15px; }
@@ -55,13 +79,18 @@
     <div class="stats-row">
         <div class="stat-box"><span>Diesel Cost<br>(€/100km)</span><strong id="cost-diesel">0.00</strong></div>
         <div class="stat-box"><span>Petrol Cost<br>(€/100km)</span><strong id="cost-petrol">0.00</strong></div>
-        <div class="stat-box"><span>EV Cost<br>(€/100km)</span><strong id="cost-ev">0.00</strong></div>
+        <div class="stat-box"><span>EV Cost<br>(incl. 10% loss)</span><strong id="cost-ev">0.00</strong></div>
     </div>
 
     <!-- 3. Row 2: Break-Even (2 Items) -->
     <div class="stats-row">
         <div class="stat-box"><span>Break-Even vs Diesel<br>(€/kWh)</span><strong id="be-diesel">0.00</strong></div>
         <div class="stat-box"><span>Break-Even vs Petrol<br>(€/kWh)</span><strong id="be-petrol">0.00</strong></div>
+    </div>
+
+    <!-- 3b. Energy Efficiency Insight -->
+    <div class="efficiency-card" id="energy-insight">
+        Calculating efficiency...
     </div>
 
     <!-- 4. Sliders (Labels above) -->
@@ -102,7 +131,7 @@
             </div>
         </div>
         <div class="control-group">
-            <label>EV Cons. (kWh/100km)</label>
+            <label>EV Cons. Displayed (kWh/100km)</label>
             <div class="slider-row">
                 <input type="range" id="ec-range" min="12.0" max="28.0" step="0.1" value="17.0">
                 <input type="number" id="ec-num" min="12.0" max="28.0" step="0.1" value="17.0" inputmode="decimal">
@@ -111,21 +140,36 @@
     </div>
 
     <script>
+        // Constants
+        const DIESEL_KWH_PER_L = 9.8;
+        const PETROL_KWH_PER_L = 8.8;
+        const CHARGING_LOSS_FACTOR = 1.10; // 10% pauschaler Ladeverlust
+
         function update() {
             const dp = parseFloat(document.getElementById('dp-num').value) || 0;
             const dc = parseFloat(document.getElementById('dc-num').value) || 0;
             const pp = parseFloat(document.getElementById('pp-num').value) || 0;
             const pc = parseFloat(document.getElementById('pc-num').value) || 0;
             const ep = parseFloat(document.getElementById('ep-num').value) || 0;
-            const ec = parseFloat(document.getElementById('ec-num').value) || 0;
+            
+            // Realer EV-Verbrauch inkl. Ladeverlust (Netz-zu-Rad)
+            const ecDisplayed = parseFloat(document.getElementById('ec-num').value) || 0;
+            const ecReal = ecDisplayed * CHARGING_LOSS_FACTOR; 
 
-            // Calculations
+            // Financial Calculations
             const costDiesel = dp * dc;
             const costPetrol = pp * pc;
-            const costEV = ep * ec;
+            const costEV = ep * ecReal;
 
-            const beDiesel = ec > 0 ? (costDiesel / ec) : 0;
-            const bePetrol = ec > 0 ? (costPetrol / ec) : 0;
+            const beDiesel = ecReal > 0 ? (costDiesel / ecReal) : 0;
+            const bePetrol = ecReal > 0 ? (costPetrol / ecReal) : 0;
+
+            // Physical Energy Calculations (Total kWh equivalent per 100km)
+            const kwhDiesel = dc * DIESEL_KWH_PER_L;
+            const kwhPetrol = pc * PETROL_KWH_PER_L;
+            
+            const savedVsDiesel = kwhDiesel > 0 ? Math.max(0, ((kwhDiesel - ecReal) / kwhDiesel) * 100) : 0;
+            const savedVsPetrol = kwhPetrol > 0 ? Math.max(0, ((kwhPetrol - ecReal) / kwhPetrol) * 100) : 0;
 
             // Update Text DOM
             document.getElementById('cost-diesel').innerText = costDiesel.toFixed(2);
@@ -134,6 +178,10 @@
             
             document.getElementById('be-diesel').innerText = beDiesel.toFixed(2);
             document.getElementById('be-petrol').innerText = bePetrol.toFixed(2);
+
+            // Update Efficiency Card
+            document.getElementById('energy-insight').innerHTML = 
+                `⚡ <strong>Energy Efficiency:</strong> EV uses <strong>${savedVsDiesel.toFixed(0)}% less</strong> primary energy than Diesel (${ecReal.toFixed(1)} vs ${kwhDiesel.toFixed(1)} kWh) and <strong>${savedVsPetrol.toFixed(0)}% less</strong> than Petrol (${ecReal.toFixed(1)} vs ${kwhPetrol.toFixed(1)} kWh) — charging losses included.`;
 
             // Update Chart
             const maxCost = Math.max(costDiesel, costPetrol, costEV, 1);
