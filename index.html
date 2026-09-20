@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vehicle Cost Comparison</title>
+    <style>
+        :root {
+            --bg: #121212; --surface: #1e1e1e; --text: #eee; --muted: #888;
+            --ev: #4caf50; --diesel: #2196f3; --petrol: #ff9800;
+        }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; box-sizing: border-box; }
+        
+        /* 1. Bar Chart Top */
+        .chart { margin-bottom: 25px; margin-top: 10px; }
+        .bar-group { display: flex; align-items: center; margin-bottom: 12px; }
+        .bar-label { width: 55px; font-size: 13px; color: var(--muted); font-weight: 500; }
+        .bar-track { flex-grow: 1; background: #333; height: 36px; border-radius: 4px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; display: flex; align-items: center; padding-left: 10px; font-weight: bold; font-size: 14px; transition: width 0.3s ease-out; color: #fff; white-space: nowrap; }
+        
+        /* 2 & 3. Stats Rows */
+        .stats-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .stat-box { flex: 1; background: var(--surface); padding: 12px 4px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;}
+        .stat-box span { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; line-height: 1.2; letter-spacing: 0.5px;}
+        .stat-box strong { font-size: 17px; }
+        
+        /* 4. Sliders at the bottom */
+        .controls { margin-top: 30px; }
+        .control-group { background: var(--surface); padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; }
+        .control-group label { display: block; font-size: 14px; color: var(--text); margin-bottom: 12px; font-weight: 500; }
+        .slider-row { display: flex; align-items: center; gap: 15px; }
+        input[type="range"] { flex-grow: 1; accent-color: #fff; height: 4px; }
+        input[type="number"] { width: 65px; background: #333; color: #fff; border: 1px solid #444; padding: 8px 6px; border-radius: 6px; text-align: center; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Bar Chart -->
+    <div class="chart">
+        <div class="bar-group">
+            <div class="bar-label">EV</div>
+            <div class="bar-track"><div class="bar-fill" id="bar-ev" style="background: var(--ev); width: 0%;"></div></div>
+        </div>
+        <div class="bar-group">
+            <div class="bar-label">Diesel</div>
+            <div class="bar-track"><div class="bar-fill" id="bar-diesel" style="background: var(--diesel); width: 0%;"></div></div>
+        </div>
+        <div class="bar-group">
+            <div class="bar-label">Petrol</div>
+            <div class="bar-track"><div class="bar-fill" id="bar-petrol" style="background: var(--petrol); width: 0%;"></div></div>
+        </div>
+    </div>
+
+    <!-- 2. Row 1: Costs (3 Items) -->
+    <div class="stats-row">
+        <div class="stat-box"><span>Diesel Cost<br>(€/100km)</span><strong id="cost-diesel">0.00</strong></div>
+        <div class="stat-box"><span>Petrol Cost<br>(€/100km)</span><strong id="cost-petrol">0.00</strong></div>
+        <div class="stat-box"><span>EV Cost<br>(€/100km)</span><strong id="cost-ev">0.00</strong></div>
+    </div>
+
+    <!-- 3. Row 2: Break-Even (2 Items) -->
+    <div class="stats-row">
+        <div class="stat-box"><span>Break-Even vs Diesel<br>(€/kWh)</span><strong id="be-diesel">0.00</strong></div>
+        <div class="stat-box"><span>Break-Even vs Petrol<br>(€/kWh)</span><strong id="be-petrol">0.00</strong></div>
+    </div>
+
+    <!-- 4. Sliders (Labels above) -->
+    <div class="controls">
+        <div class="control-group">
+            <label>Diesel Price (€/L)</label>
+            <div class="slider-row">
+                <input type="range" id="dp-range" min="1.20" max="2.50" step="0.01" value="2.00">
+                <input type="number" id="dp-num" min="1.20" max="2.50" step="0.01" value="2.00" inputmode="decimal">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Diesel Cons. (L/100km)</label>
+            <div class="slider-row">
+                <input type="range" id="dc-range" min="4.0" max="10.0" step="0.1" value="5.5">
+                <input type="number" id="dc-num" min="4.0" max="10.0" step="0.1" value="5.5" inputmode="decimal">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Petrol Price (€/L)</label>
+            <div class="slider-row">
+                <input type="range" id="pp-range" min="1.20" max="2.50" step="0.01" value="1.90">
+                <input type="number" id="pp-num" min="1.20" max="2.50" step="0.01" value="1.90" inputmode="decimal">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Petrol Cons. (L/100km)</label>
+            <div class="slider-row">
+                <input type="range" id="pc-range" min="5.0" max="12.0" step="0.1" value="7.0">
+                <input type="number" id="pc-num" min="5.0" max="12.0" step="0.1" value="7.0" inputmode="decimal">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Power Price (€/kWh)</label>
+            <div class="slider-row">
+                <input type="range" id="ep-range" min="0.15" max="0.90" step="0.01" value="0.35">
+                <input type="number" id="ep-num" min="0.15" max="0.90" step="0.01" value="0.35" inputmode="decimal">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>EV Cons. (kWh/100km)</label>
+            <div class="slider-row">
+                <input type="range" id="ec-range" min="12.0" max="28.0" step="0.1" value="17.0">
+                <input type="number" id="ec-num" min="12.0" max="28.0" step="0.1" value="17.0" inputmode="decimal">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function update() {
+            const dp = parseFloat(document.getElementById('dp-num').value) || 0;
+            const dc = parseFloat(document.getElementById('dc-num').value) || 0;
+            const pp = parseFloat(document.getElementById('pp-num').value) || 0;
+            const pc = parseFloat(document.getElementById('pc-num').value) || 0;
+            const ep = parseFloat(document.getElementById('ep-num').value) || 0;
+            const ec = parseFloat(document.getElementById('ec-num').value) || 0;
+
+            // Calculations
+            const costDiesel = dp * dc;
+            const costPetrol = pp * pc;
+            const costEV = ep * ec;
+
+            const beDiesel = ec > 0 ? (costDiesel / ec) : 0;
+            const bePetrol = ec > 0 ? (costPetrol / ec) : 0;
+
+            // Update Text DOM
+            document.getElementById('cost-diesel').innerText = costDiesel.toFixed(2);
+            document.getElementById('cost-petrol').innerText = costPetrol.toFixed(2);
+            document.getElementById('cost-ev').innerText = costEV.toFixed(2);
+            
+            document.getElementById('be-diesel').innerText = beDiesel.toFixed(2);
+            document.getElementById('be-petrol').innerText = bePetrol.toFixed(2);
+
+            // Update Chart
+            const maxCost = Math.max(costDiesel, costPetrol, costEV, 1);
+            
+            const wEV = (costEV / maxCost) * 100;
+            const wDiesel = (costDiesel / maxCost) * 100;
+            const wPetrol = (costPetrol / maxCost) * 100;
+
+            const barEv = document.getElementById('bar-ev');
+            const barDiesel = document.getElementById('bar-diesel');
+            const barPetrol = document.getElementById('bar-petrol');
+
+            barEv.style.width = wEV + '%';
+            barEv.innerText = '€ ' + costEV.toFixed(2);
+
+            barDiesel.style.width = wDiesel + '%';
+            barDiesel.innerText = '€ ' + costDiesel.toFixed(2);
+
+            barPetrol.style.width = wPetrol + '%';
+            barPetrol.innerText = '€ ' + costPetrol.toFixed(2);
+        }
+
+        // Sync Range and Number Inputs
+        function setupSync(baseId) {
+            const range = document.getElementById(baseId + '-range');
+            const num = document.getElementById(baseId + '-num');
+            
+            range.addEventListener('input', (e) => { 
+                num.value = e.target.value; 
+                update(); 
+            });
+            num.addEventListener('input', (e) => { 
+                range.value = e.target.value; 
+                update(); 
+            });
+        }
+
+        const inputs = ['dp', 'dc', 'pp', 'pc', 'ep', 'ec'];
+        inputs.forEach(setupSync);
+
+        // Initial render
+        update();
+    </script>
+</body>
+</html>
